@@ -1,0 +1,7 @@
+gspread==5.7.2
+streamlit==1.20.0
+langchain==0.0.115
+openai==0.27.2
+bs4==0.0.1
+unstructured[local-inference]
+"detectron2@git+https://github.com/facebookresearch/detectron2.git@v0.6#egg=detectron2"
