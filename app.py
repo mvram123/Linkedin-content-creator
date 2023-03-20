@@ -13,28 +13,32 @@ from langchain.docstore.document import Document
 from langchain.chains.summarize import load_summarize_chain
 
 system_template = """
-You are a Linkedin post creator. 
-I want you to create a linkedin post using the below text.
+You are a LinkedIn post creator. 
+I would like you to create a post using the text provided below. 
+Please note that I did not develop this text. 
+I need your expertise to turn it into a LinkedIn post.
 
-The below text is not developed by myself. I am creating a linkedin post around that text.
-The post should consists of atleast 10 paragraphs of content.
 Your goal is to:
-- Properly understand the text.
-- Generate post based on specified flavour.
-- Convert the post to a third person mode. 
-- Convert the post to a specified tone.
+1. Understand the text properly.
+2. Generate a post that reflects the specified style or approach.
+3. Convert the post to third-person mode.
+4. Use the specified tone.
+5. Write a post that is at least 400 words long.
 
 Here are some examples different Tones:
-- Formal: We went to Barcelona for the weekend. We have a lot of things to tell you.
-- Informal: Went to Barcelona for the weekend. Lots to tell you.
+- Casual: "Don't Miss Out on These Awesome Event Trends!"
+- Professional: "Valuable Insights for Industry Professionals: Key Trends from Recent Event"
+- Humorous: "Snacks vs. Insights: The Ultimate Event Showdown!"
+- Informative: "Comprehensive Analysis of Key Findings from Recent Event"
+- Inspirational: "Pushing Boundaries and Exploring New Opportunities: Insights from Recent Event"
 """
 
 human_msge_template = """
-Please start the linkedin post with a title. 
+Start with a post title.
 
-Below is the text, flavour, and tone:
+Below is the text, style, and tone:
 TEXT: {text}
-FLAVOUR: {flavour}
+STYLE: {style}
 TONE: {tone}
 
 YOUR RESPONSE:
@@ -48,7 +52,7 @@ for cred in creds:
     credentials[cred] = os.environ.get(cred)
 
 # creds_json = os.environ.get('CREDENTIALS')
-# gc = gspread.service_account(filename=credentials_file)
+# gc = gspread.service_account(filename="credentials.json")
 gc = gspread.service_account_from_dict(credentials)
 sh = gc.open_by_key("1nps81OcyJXbbouIcAux-LV93zo24OW4m7dB6YAXs6Fg")
 
@@ -81,11 +85,11 @@ def create_chatprompt(system_template, human_msge_template):
 def convert(seconds):
     return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
-flavours_dict = {
-    "Basic Introduction Post": "Create Introduction linkedin post for the article",
-    "Summary Post": "Summarize the content and create a post using summary",
-    "Key Observations Post": "List out 15 most important observations in bullet points",
-    "Benifits & Limitations Post": "List out all top benifits and limitations in bullet points"
+styles_dict = {
+    "Basic Introduction Post": "Introduce the topic or article in a concise and engaging manner. Highlight the key points and provide a compelling reason for the audience to continue reading",
+    "Summary Post": "Provide a brief summary of the content, focusing on the most important points. Use clear and concise language to make the post easy to read and understand",
+    "Key Observations Post": "Identify the most important observations or insights from the content and present them in a clear and organized manner. Use bullet points or numbered lists to make the post easy to scan and digest.",
+    "Benifits & Limitations Post": "Highlight the top benefits and limitations of the topic or article, providing a balanced view of both. Use bullet points or numbered lists to make the post easy to read and understand"
 }
 # Page introductions
 
@@ -104,7 +108,7 @@ st.image(image)
 st.title('Linkedin Posts Creator Using ChatGPT')
 st.write("A demo app to create LinkedIn posts based on an article/blog using ChatGPT API")
 st.write("Just enter your OpenAI API key and the article link, and we'll give you the post depending on the type of post. ")
-st.write("Compared to other OpenAI models, it is cheaper and more accurate, and it will take around 2 minutes to generate the results.")
+st.write("Compared to other OpenAI models, it is cheaper and more accurate, and it will take around 2 minutes to generate the results. Press the stop button if it exceeds 2 mins and rerun the code again")
 st.write("In the future versions, will utilize more open source Language models to generate results")
 st.markdown("Created by M V Rama Rao. Follow me on LinkedIn 🤗:  [Linkedin](https://www.linkedin.com/in/ramarao-mv/) ")
 
@@ -117,17 +121,17 @@ article_url = st.text_input('Enter Article URL', placeholder='Enter your URL')
 # flavour options & tone options & temperature
 col1, col2 = st.columns(2)
 with col1:
-   flavour = st.selectbox(
+   style = st.selectbox(
     'Select the type of post',
     ('Basic Introduction Post', 'Summary Post', 'Key Observations Post', 'Benifits & Limitations Post'))
 with col2:
    tone = st.selectbox(
     'Select the tone',
-    ('Informal', 'formal'))
+    ('Casual', 'Professional', 'Humorous', 'Informative', 'Inspirational'))
     # ('Casual', 'Formal', 'Humorous', 'Persuasive', 'Informative', 'Emotional'))
 
 # temp slider
-temperature = st.slider('Select temperature', 0.0, 1.0, 0.10, step=0.10)
+temperature = st.slider('Select temperature', 0.0, 2.0, 0.10, step=0.10)
 
 if st.button('Submit'):
     
@@ -171,28 +175,31 @@ if st.button('Submit'):
     chat_prompt = create_chatprompt(system_template=system_template, human_msge_template=human_msge_template)
     # my_bar = st.progress(0, text="Generating posts...")
 
+    if st.button("Stop Generating"):
+            st.warning("post not generated", icon="⚠️")
+            st.stop()
+
     with st.spinner(text="Generating post..."):
     # for i in range(3):
         start_time = time.time() 
-        chain = load_summarize_chain(llm, chain_type="map_reduce", 
-                                    return_intermediate_steps=False, map_prompt=chat_prompt, combine_prompt=chat_prompt)
-        result = chain({"input_documents": docs, "flavour": flavours_dict[flavour], "tone": tone}, return_only_outputs=True)
+        chain = load_summarize_chain(llm, chain_type="map_reduce", map_prompt=chat_prompt, combine_prompt=chat_prompt)
+        result = chain({"input_documents": docs, "style": styles_dict[style], "tone": tone})
         post_result = result['output_text']
         end_time = time.time()
+        
     # my_bar.progress((i + 1)*33, text="Generating posts...")
 
     st.success(f'Post generation successful. Time taken: {convert(end_time-start_time)[3:]} mins', icon="✅")
 
     st.code(post_result, language=None)
+    time.sleep(10)
+
+    st.cache_resource.clear()
 
     # for num, result in enumerate(post_results):
     #     st.write(f"Variation {num+1}")
     #     st.code(result, language=None)
 
-
-if st.button("Clear All Data"):
-    # Clears all st.cache_resource caches:
-    st.cache_resource.clear()
 
 
 
