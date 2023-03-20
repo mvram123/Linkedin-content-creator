@@ -99,7 +99,9 @@ st.image(image)
 
 st.title('Linkedin Posts Creator Using ChatGPT')
 st.write("A demo app to create LinkedIn posts based on an article/blog using ChatGPT API")
-st.write("Just enter your OpenAI API key and the article link, and we'll give you three different versions of the post depending on the type of post.")
+st.write("Just enter your OpenAI API key and the article link, and we'll give you three different versions of the post depending on the type of post. ")
+st.write("Compared to other OpenAI models, it is cheaper and more accurate, and it will take around 5 minutes to generate the results.")
+st.write("In the future versions, will utilize more open source Language models to generate results")
 st.markdown("Created by M V Rama Rao. Follow me on LinkedIn 🤗:  [Linkedin](https://www.linkedin.com/in/ramarao-mv/) ")
 
 # enter your open ai api key
