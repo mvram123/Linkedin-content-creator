@@ -77,6 +77,12 @@ def create_chatprompt(system_template, human_msge_template):
     chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
     return chat_prompt
 
+flavours_dict = {
+    "Basic Introduction Post": "Create Introduction linkedin post for the article",
+    "Summary Post": "Summarize the content and create a post using summary",
+    "Key Observations Post": "List out 10 most important observations in bullet points",
+    "Benifits & Limitations Post": "List out top benifits and limitations in bullet points"
+}
 # Page introductions
 
 #icon image
@@ -111,7 +117,8 @@ with col1:
 with col2:
    tone = st.selectbox(
     'Select the tone',
-    ('Casual', 'Formal', 'Humorous', 'Persuasive', 'Informative', 'Emotional'))
+    ('Informal', 'formal'))
+    # ('Casual', 'Formal', 'Humorous', 'Persuasive', 'Informative', 'Emotional'))
 
 # temp slider
 temperature = st.slider('Select temperature', 0.0, 1.0, 0.10, step=0.10)
@@ -161,7 +168,7 @@ if st.button('Submit'):
     for i in range(3):
         chain = load_summarize_chain(llm, chain_type="map_reduce", 
                                return_intermediate_steps=False, map_prompt=chat_prompt, combine_prompt=chat_prompt)
-        result = chain({"input_documents": docs, "flavour": flavour, "tone": tone}, return_only_outputs=True)
+        result = chain({"input_documents": docs, "flavour": flavours_dict[flavour], "tone": tone}, return_only_outputs=True)
         post_results.append(result['output_text'])
         my_bar.progress((i + 1)*33, text="Generating posts...")
 
