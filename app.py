@@ -2,6 +2,7 @@ import os
 import json
 import gspread
 import streamlit as st
+from time import time
 from datetime import datetime
 from PIL import Image
 from langchain.chat_models import ChatOpenAI
@@ -99,7 +100,7 @@ st.image(image)
 
 st.title('Linkedin Posts Creator Using ChatGPT')
 st.write("A demo app to create LinkedIn posts based on an article/blog using ChatGPT API")
-st.write("Just enter your OpenAI API key and the article link, and we'll give you three different versions of the post depending on the type of post. ")
+st.write("Just enter your OpenAI API key and the article link, and we'll give you the post depending on the type of post. ")
 st.write("Compared to other OpenAI models, it is cheaper and more accurate, and it will take around 5 minutes to generate the results.")
 st.write("In the future versions, will utilize more open source Language models to generate results")
 st.markdown("Created by M V Rama Rao. Follow me on LinkedIn 🤗:  [Linkedin](https://www.linkedin.com/in/ramarao-mv/) ")
@@ -163,22 +164,27 @@ if st.button('Submit'):
         st.stop()
 
     # generate 3 variations
-    post_results = []
+    # post_results = []
     chat_prompt = create_chatprompt(system_template=system_template, human_msge_template=human_msge_template)
     my_bar = st.progress(0, text="Generating posts...")
 
-    for i in range(3):
+    with st.spinner(text="Generating post..."):
+    # for i in range(3):
+        start_time = time.now() 
         chain = load_summarize_chain(llm, chain_type="map_reduce", 
-                               return_intermediate_steps=False, map_prompt=chat_prompt, combine_prompt=chat_prompt)
+                                    return_intermediate_steps=False, map_prompt=chat_prompt, combine_prompt=chat_prompt)
         result = chain({"input_documents": docs, "flavour": flavours_dict[flavour], "tone": tone}, return_only_outputs=True)
-        post_results.append(result['output_text'])
-        my_bar.progress((i + 1)*33, text="Generating posts...")
+        post_result = result['output_text']
+        end_time = time
+    # my_bar.progress((i + 1)*33, text="Generating posts...")
 
-    st.success('Three variations of posts generated!', icon="✅")
+    st.success(f'Post generation successful. Time taken:{end_time-start_time}', icon="✅")
 
-    for num, result in enumerate(post_results):
-        st.write(f"Variation {num+1}")
-        st.code(result, language=None)
+    st.code(post_result, language=None)
+
+    # for num, result in enumerate(post_results):
+    #     st.write(f"Variation {num+1}")
+    #     st.code(result, language=None)
 
 
 if st.button("Clear All Data"):
