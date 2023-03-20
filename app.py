@@ -78,6 +78,9 @@ def create_chatprompt(system_template, human_msge_template):
     chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
     return chat_prompt
 
+def convert(seconds):
+    return time.strftime("%H:%M:%S", time.gmtime(seconds))
+
 flavours_dict = {
     "Basic Introduction Post": "Create Introduction linkedin post for the article",
     "Summary Post": "Summarize the content and create a post using summary",
@@ -101,7 +104,7 @@ st.image(image)
 st.title('Linkedin Posts Creator Using ChatGPT')
 st.write("A demo app to create LinkedIn posts based on an article/blog using ChatGPT API")
 st.write("Just enter your OpenAI API key and the article link, and we'll give you the post depending on the type of post. ")
-st.write("Compared to other OpenAI models, it is cheaper and more accurate, and it will take around 5 minutes to generate the results.")
+st.write("Compared to other OpenAI models, it is cheaper and more accurate, and it will take around 2 minutes to generate the results.")
 st.write("In the future versions, will utilize more open source Language models to generate results")
 st.markdown("Created by M V Rama Rao. Follow me on LinkedIn 🤗:  [Linkedin](https://www.linkedin.com/in/ramarao-mv/) ")
 
@@ -178,7 +181,7 @@ if st.button('Submit'):
         end_time = time.time()
     # my_bar.progress((i + 1)*33, text="Generating posts...")
 
-    st.success(f'Post generation successful. Time taken:{end_time-start_time}', icon="✅")
+    st.success(f'Post generation successful. Time taken:{convert(end_time-start_time)[3:]}', icon="✅")
 
     st.code(post_result, language=None)
 
