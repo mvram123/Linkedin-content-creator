@@ -166,7 +166,7 @@ if st.button('Submit'):
     # generate 3 variations
     # post_results = []
     chat_prompt = create_chatprompt(system_template=system_template, human_msge_template=human_msge_template)
-    my_bar = st.progress(0, text="Generating posts...")
+    # my_bar = st.progress(0, text="Generating posts...")
 
     with st.spinner(text="Generating post..."):
     # for i in range(3):
