@@ -170,12 +170,12 @@ if st.button('Submit'):
 
     with st.spinner(text="Generating post..."):
     # for i in range(3):
-        start_time = time.now() 
+        start_time = time.time() 
         chain = load_summarize_chain(llm, chain_type="map_reduce", 
                                     return_intermediate_steps=False, map_prompt=chat_prompt, combine_prompt=chat_prompt)
         result = chain({"input_documents": docs, "flavour": flavours_dict[flavour], "tone": tone}, return_only_outputs=True)
         post_result = result['output_text']
-        end_time = time
+        end_time = time.time()
     # my_bar.progress((i + 1)*33, text="Generating posts...")
 
     st.success(f'Post generation successful. Time taken:{end_time-start_time}', icon="✅")
