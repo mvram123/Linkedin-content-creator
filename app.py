@@ -39,10 +39,16 @@ TONE: {tone}
 YOUR RESPONSE:
 """
 # access the sheet with this link - https://docs.google.com/spreadsheets/d/1nps81OcyJXbbouIcAux-LV93zo24OW4m7dB6YAXs6Fg/edit?usp=sharing
-creds_json = os.environ.get('CREDENTIALS')
-creds = json.loads(creds_json)
+creds = ["type", "project_id", "private_key_id", "private_key", "client_email",
+        "client_id", "auth_uri", "token_uri", "auth_provider_x509_cert_url", "client_x509_cert_url"]
+
+credentials = {}
+for cred in creds:
+    credentials[cred] = os.environ.get(cred)
+
+# creds_json = os.environ.get('CREDENTIALS')
 # gc = gspread.service_account(filename=credentials_file)
-gc = gspread.service_account_from_dict(creds)
+gc = gspread.service_account_from_dict(credentials)
 sh = gc.open_by_key("1nps81OcyJXbbouIcAux-LV93zo24OW4m7dB6YAXs6Fg")
 
 # for storing failed articles for further analysis.
