@@ -17,7 +17,7 @@ You are a Linkedin post creator.
 I want you to create a linkedin post using the below text.
 
 The below text is not developed by myself. I am creating a linkedin post around that text.
-The post should consists of atleast 7 to 8 paragraphs of content.
+The post should consists of atleast 10 paragraphs of content.
 Your goal is to:
 - Properly understand the text.
 - Generate post based on specified flavour.
@@ -84,8 +84,8 @@ def convert(seconds):
 flavours_dict = {
     "Basic Introduction Post": "Create Introduction linkedin post for the article",
     "Summary Post": "Summarize the content and create a post using summary",
-    "Key Observations Post": "List out 10 most important observations in bullet points",
-    "Benifits & Limitations Post": "List out top benifits and limitations in bullet points"
+    "Key Observations Post": "List out 15 most important observations in bullet points",
+    "Benifits & Limitations Post": "List out all top benifits and limitations in bullet points"
 }
 # Page introductions
 
@@ -181,7 +181,7 @@ if st.button('Submit'):
         end_time = time.time()
     # my_bar.progress((i + 1)*33, text="Generating posts...")
 
-    st.success(f'Post generation successful. Time taken:{convert(end_time-start_time)[3:]}', icon="✅")
+    st.success(f'Post generation successful. Time taken: {convert(end_time-start_time)[3:]} mins', icon="✅")
 
     st.code(post_result, language=None)
 
