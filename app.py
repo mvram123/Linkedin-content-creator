@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import pytz
 from datetime import datetime
 from PIL import Image
 import gspread
@@ -175,7 +176,8 @@ if st.button('Submit'):
 
 
     output_num_tokens = get_doc_num_tokens(post_result, llm)
-    current_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+    IST = pytz.timezone('Asia/Kolkata')
+    current_time = datetime.now(IST).strftime("%m/%d/%Y, %H:%M:%S")
     success_record = [current_time, input_num_tokens, output_num_tokens, convert(end_time-start_time)[3:]+' mins', style, tone]
     runs_sheet.append_row(success_record)
 
