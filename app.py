@@ -223,7 +223,6 @@ comment_submit = form.form_submit_button("Add comment")
 if comment_submit:
     if not validate_email(email):
         st.warning("Please enter proper email", icon="⚠️")
-        st.warning(e)
         st.stop()
 
     current_time = datetime.now(IST).strftime("%m/%d/%Y, %H:%M:%S")
