@@ -1,11 +1,11 @@
 import os
-import json
 import time
 import pytz
-from datetime import datetime
-from PIL import Image
 import gspread
 import streamlit as st
+from PIL import Image
+from datetime import datetime
+from configparser import ConfigParser
 
 from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import UnstructuredURLLoader
@@ -13,11 +13,12 @@ from langchain.docstore.document import Document
 from langchain.prompts.chat import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain.chains.summarize import load_summarize_chain
 from langchain.text_splitter import CharacterTextSplitter
-from configparser import ConfigParser
 
 # load config file
 config = ConfigParser()
 config.read("./config.ini")
+
+IST = pytz.timezone('Asia/Kolkata')
 
 creds = config.get('DEFAULT', 'required_credential_keys').split(", ")
 
@@ -28,7 +29,8 @@ HUMAN_TEMPLATE = config.get('PROMPTS', 'human_template')
 
 SHEET_KEY = config.get('GSHEETS', 'sheet_key')
 FAILED_ARTICLES_SHEET_NO = int(config.get('GSHEETS', 'failed_articles_sheet_no'))
-RUNS_SHEET_NO = int(config.get('GSHEETS', 'runs_sheet'))
+RUNS_SHEET_NO = int(config.get('GSHEETS', 'runs_sheet_no'))
+COMMENTS_SHEET_NO = int(config.get('GSHEETS', 'comments_sheet_no'))
 
 credentials = {}
 for cred in creds:
@@ -41,12 +43,13 @@ sh = gc.open_by_key(SHEET_KEY)
 # Storing basic run info like datetime, input tokens, runtime etc for further analysis.
 failed_articles_sheet = sh.get_worksheet(FAILED_ARTICLES_SHEET_NO)
 runs_sheet = sh.get_worksheet(RUNS_SHEET_NO)
+comment_sheet = sh.get_worksheet(COMMENTS_SHEET_NO)
 
 styles_dict = {
-    "Basic Introduction Post": "Introduce the topic or article in a concise and engaging manner. Highlight the key points and provide a compelling reason for the audience to continue reading",
-    "Summary Post": "Provide a brief summary of the content, focusing on the most important points. Use clear and concise language to make the post easy to read and understand",
-    "Key Observations Post": "Identify the most important observations or insights from the content and present them in a clear and organized manner. Use bullet points or numbered lists to make the post easy to scan and digest.",
-    "Benifits & Limitations Post": "Highlight the top benefits and limitations of the topic or article, providing a balanced view of both. Use bullet points or numbered lists to make the post easy to read and understand"
+    "Basic Introduction Post": "Introduce the main topic or article in a concise and engaging manner. Highlight atleast 4 key points and provide a compelling reason for the audience to continue reading",
+    "Summary Post": "Provide a brief summary of the content, focusing on the atleast 4 most important points. Use clear and concise language to make the post easy to read and understand",
+    "Key Observations Post": "Identify the top 5 most important observations or insights from the content and present them in a clear and organized manner. Use bullet points or numbered lists to make the post easy to scan and digest.",
+    "Benifits & Limitations Post": "Highlight the top 4 benefits and limitations of the topic or article, providing a balanced view of both. Use bullet points or numbered lists to make the post easy to read and understand"
 }
 
 @st.cache_resource
@@ -77,6 +80,14 @@ def convert(seconds):
 def get_doc_num_tokens(text, llm):
     return llm.get_num_tokens(text)
 
+def validate_email(email):
+    """
+    This function takes an email as input and returns True if the email is valid, False otherwise.
+    """
+    import re
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email))
+
 # Page introductions
 icon_image = Image.open("icon.png")
 
@@ -90,33 +101,34 @@ st.image(image)
 
 st.title('Linkedin Posts Creator Using ChatGPT')
 st.write("A demo app to create LinkedIn posts based on an article/blog using ChatGPT API")
-st.write("The app will generate the post based on the type, once you provide your OpenAI API key and the article link. ")
-st.write("It will take around 2 minutes to generate the results. Press the stop generating button if it exceeds 2 mins and rerun the code again")
-st.write("I am planning to add more open source LLMs in future versions and also incorporate the functionality of inputting YouTube videos and generating posts based on the video's content.")
-st.write("Stay tuned for the later updates!!")
+st.write("It will take around 1-2 minutes to generate the results. Press the stop generating button if it exceeds 2 mins and rerun the code again")
+st.write("Your comments are important for improving the app and resolving any queries you may have, so please feel free to add them at the bottom")
 st.markdown("Created by M V Rama Rao. Follow me on LinkedIn 🤗:  [Linkedin](https://www.linkedin.com/in/ramarao-mv/) ")
 
+st.markdown("""---""")
+
 # enter your open ai api key
-openai_api_key = st.text_input('OpenAI API key', placeholder='Enter your OpenAI API key')
+openai_api_key = st.text_input('**OpenAI API key**', placeholder='Enter your OpenAI API key', type="password")
+st.write("Don't have an API key? refer this [video](https://youtu.be/nafDyRsVnXU)")
 
 # enter article url
-article_url = st.text_input('Enter Article URL', placeholder='Enter your URL')
+article_url = st.text_input('**Enter Article UR**L', placeholder='Enter your URL')
 
 # Style options & tone options.
 col1, col2 = st.columns(2)
 with col1:
    style = st.selectbox(
-    'Select the type of post',
-    ('Basic Introduction Post', 'Summary Post', 'Key Observations Post', 'Benifits & Limitations Post'))
+    '**Select the type of post**',
+    ('Basic Introduction', 'Summary', 'Key Observations', 'Benifits & Limitations'))
 with col2:
    tone = st.selectbox(
-    'Select the tone',
+    '**Select the tone**',
     ('Casual', 'Professional', 'Humorous', 'Informative', 'Inspirational'))
 
 # temperature slider
-temperature = st.slider('Select temperature', 0.0, 2.0, 0.10, step=0.10)
+temperature = st.slider('**Select temperature**', 0.0, 2.0, 0.10, step=0.10)
 
-if st.button('Submit'):
+if st.button("Submit"):
     
     if not openai_api_key:
         st.warning('Please insert OpenAI API Key. Instructions [here](https://help.openai.com/en/articles/4936850-where-do-i-find-my-secret-api-key)', icon="⚠️")
@@ -130,20 +142,6 @@ if st.button('Submit'):
         st.warning("Please insert Article URL to generate post.")
         st.stop()
 
-    # loading data from article
-    try:
-        data = load_text_from_html(url=article_url)
-        docs = generate_docs(data=data)
-        print("total docs number", len(docs))
-
-    except Exception as e:
-        current_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-        failed_record = [current_time, article_url]
-        failed_articles_sheet.append_row(failed_record)
-        st.warning("Cannot extract data from this article. Please try different article ", icon="⚠️")
-        st.stop()
-        
-    
     # loading Chat LLM model
     try:
         llm = load_llm(openai_api_key=openai_api_key, temperature=temperature)
@@ -151,11 +149,33 @@ if st.button('Submit'):
         st.warning("Please Enter proper OpenAI API Key. ", icon="⚠️")
         st.stop()
 
+    # loading data from article
+    try:
+        data = load_text_from_html(url=article_url)
+        docs = generate_docs(data=data)
+        print("total docs number", len(docs))
+
+        prompt_tokens = llm.get_num_tokens(SYSTEM_TEMPLATE) + llm.get_num_tokens(HUMAN_TEMPLATE)
+        for doc in docs:
+            doc_tokens = llm.get_num_tokens(doc.page_content)
+            print("doc_tokens", doc_tokens)
+            combined_tokens = doc_tokens + prompt_tokens
+            print("combined_tokens", combined_tokens)
+            if combined_tokens >= 3990:
+                raise Exception("token limit exceeded. Article cannot be processed temporarily") 
+
+    except Exception as e:
+        current_time = datetime.now(IST).strftime("%m/%d/%Y, %H:%M:%S")
+        failed_record = [current_time, article_url]
+        failed_articles_sheet.append_row(failed_record)
+        st.warning("Cannot extract data from this article. Please try different article ", icon="⚠️")
+        print(e)
+        st.stop()
+        
     chat_prompt = create_chatprompt(system_template=SYSTEM_TEMPLATE, human_msge_template=HUMAN_TEMPLATE)
 
     # input data token lengths
     input_num_tokens = get_doc_num_tokens(data[0].page_content, llm)
-
     start_time = time.time() 
 
     if st.button("Stop Generating"):
@@ -176,12 +196,38 @@ if st.button('Submit'):
 
 
     output_num_tokens = get_doc_num_tokens(post_result, llm)
-    IST = pytz.timezone('Asia/Kolkata')
     current_time = datetime.now(IST).strftime("%m/%d/%Y, %H:%M:%S")
     success_record = [current_time, input_num_tokens, output_num_tokens, convert(end_time-start_time)[3:]+' mins', style, tone]
     runs_sheet.append_row(success_record)
 
-    st.success(f'Post generation successful. Time taken: {convert(end_time-start_time)[3:]} mins', icon="✅")
+    st.success(f'Post generation successful. Time taken: {convert(end_time-start_time)[3:]} mins. Please add your experience in the below comments section!! 🤗', icon="✅")
 
     st.code(post_result, language=None)
     st.cache_resource.clear()
+
+
+
+
+st.markdown("""---""")
+
+st.write("**Add your own comment:**")
+form = st.form("comment")
+email = form.text_input("Email")
+comment_type = form.selectbox('Comment type', 
+                ('Feedback', 'Support', 'Testimonial', 'Appreciation', 'Bug report','Feature request', 
+                'Review'))
+
+comment = form.text_area("Comment")
+comment_submit = form.form_submit_button("Add comment")
+
+if comment_submit:
+    if not validate_email(email):
+        st.warning("Please enter proper email", icon="⚠️")
+        st.warning(e)
+        st.stop()
+
+    current_time = datetime.now(IST).strftime("%m/%d/%Y, %H:%M:%S")
+    comment_record = [current_time, email, comment, comment_type]
+    comment_sheet.append_row(comment_record)
+    st.success(f'Comment successfully added.', icon="✅")
+
