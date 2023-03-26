@@ -46,10 +46,10 @@ runs_sheet = sh.get_worksheet(RUNS_SHEET_NO)
 comment_sheet = sh.get_worksheet(COMMENTS_SHEET_NO)
 
 styles_dict = {
-    "Basic Introduction Post": "Introduce the main topic or article in a concise and engaging manner. Highlight atleast 4 key points and provide a compelling reason for the audience to continue reading",
-    "Summary Post": "Provide a brief summary of the content, focusing on the atleast 4 most important points. Use clear and concise language to make the post easy to read and understand",
-    "Key Observations Post": "Identify the top 5 most important observations or insights from the content and present them in a clear and organized manner. Use bullet points or numbered lists to make the post easy to scan and digest.",
-    "Benifits & Limitations Post": "Highlight the top 4 benefits and limitations of the topic or article, providing a balanced view of both. Use bullet points or numbered lists to make the post easy to read and understand"
+    "Basic Introduction": "Introduce the main topic or article in a concise and engaging manner. Highlight atleast 4 key points and provide a compelling reason for the audience to continue reading",
+    "Summary": "Provide a brief summary of the content, focusing on the atleast 4 most important points. Use clear and concise language to make the post easy to read and understand",
+    "Key Observations": "Identify the top 5 most important observations or insights from the content and present them in a clear and organized manner. Use bullet points or numbered lists to make the post easy to scan and digest.",
+    "Benifits & Limitations": "Highlight the top 4 benefits and limitations of the topic or article, providing a balanced view of both. Use bullet points or numbered lists to make the post easy to read and understand"
 }
 
 @st.cache_resource
